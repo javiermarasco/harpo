@@ -27,11 +27,6 @@ type auth struct {
 	Token        string `json:"access_token"`
 }
 
-//"d74aa073-cfda-4e0a-bf45-f03a1ae082cb"
-//"ZTM7Q~AS6.Wex8U1FW6b_hBYjH-si1FT9J~Oh"
-//"eaf2733b-9db9-4ce4-aa41-0e902bf3e5f9"
-// keyvaultname := "goclikeyvault"
-
 func main() {
 	Client_Id := os.Getenv("KV_clientid")
 	Client_Secret := os.Getenv("KV_clientsecret")
