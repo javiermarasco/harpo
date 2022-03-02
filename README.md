@@ -5,7 +5,13 @@ Objetivo:
 - Usar un SPN para el acceso a los secrets de keyvault
 - Inicialmente solo manejo de secrets 
   - A futuro mismo funcionamiento pero para keys y certs
+- Agregar soporte para AWS
+- Agregar soporte para GCP
 
+# Pueden seguir el progreso de este proyecto en mis streams en twitch o Youtube (Para mas información pueden revisar aquí -> https://linktr.ee/javi__codes)
+
+
+# You can follow the progress of this project on my live streams on Twitch or Youtube (for more information check here -> https://linktr.ee/javi__codes )
 
 Implementación
 
