@@ -1,51 +1,112 @@
-Objetivo:
+# Secret Manager CLI
 
-- Crear un CLI para azure Keyvault que permita manejar secrets como si estuvieran en carpetas
-- Utilizar GO como lenguaje de programación
-- Usar un SPN para el acceso a los secrets de keyvault
-- Inicialmente solo manejo de secrets 
-  - A futuro mismo funcionamiento pero para keys y certs
-- Agregar soporte para AWS
-- Agregar soporte para GCP
+The objective of this cli is to be able to manage secrets in Azure, AWS and GCP by using a path to 
+specify where a secret is stored in a "folder structure" approach while providing an easy way to list 
+secrets in this folder structure and also an easy way to retrieve the values of those secrets.
 
-# Pueden seguir el progreso de este proyecto en mis streams en twitch o Youtube (Para mas información pueden revisar aquí -> https://linktr.ee/javi__codes)
+## [You can follow the progress of this project on my live streams on Twitch or Youtube](https://linktr.ee/javi__codes)
 
+# How to use
 
-# You can follow the progress of this project on my live streams on Twitch or Youtube (for more information check here -> https://linktr.ee/javi__codes )
+## Azure
 
-Implementación
+You need to define 4 environment variables
+- "AZ_clientid" (Contains the client id of the service princial/app registration used to access your keyvault)
+- "AZ_clientsecret" (Contains the secret of the service principal/app registration)
+- "AZ_tenantid" (Contains the Tenant ID where your keyvault is deployed)
+- "AZ_kvname" (Contains the name of the keyvault to use)
 
-- [x] Crear una keyvault
-- [x] Crear un SPN para manejar los secrets del keyvault
-- [x] Dar permisos de secrets al SPN
-- [x] Crear un packet o modulo de GO para la solución
-- [x] Credenciales para acceder a keyvault como environment variables
-  - [x] ClientID
-  - [x] Secret
-  - [x] TenantID
-  - [x] VaultName
-- [x] Inputs
-  - [x] Path: "/infra/dev/cluster"
-  - [x] SecretName: "Port"
-  - [x] Value: "80"
-- [ ] Tareas:
-  - [x] Split del path por "/" (separador)
-  - [x] Crear tags en base al path
-    - [x] A: infra
-    - [x] B: dev
-    - [x] C: cluster
-    - [x] SecretName: port
-    - [x] Valor en el secret --> Value(80)
-  - [x] Nombre del secret es un hash compuesto por: (Esto nos va a permitir mantener multiples versiones del mismo secret)
-    - [x] Todos los tags + SecretName
-  - [x] Write de secrets
-    - [x] Usando argumentos y flags desde la linea de comandos
-  - [ ] Read de secrets
-    - [ ] Usando argumentos y flags desde la linea de comandos
-  - [ ] Manejo de Keys
-  - [ ] Manejo de Certs
+Once your have this variables defined you can start using the CLI.
 
-Agregar AWS vault
-  - [ ] TODO
-Agregar GCP vault
-  - [ ] TODO
+### Write secrets
+
+This command will write a secret into the secret store using the path specified and the name and value.
+
+secretmanager -write -path <secret_path> -name <secret_name> -value <secret_value>
+
+- secret_path: This is the path where the secret will be stored, it can start or end with a "/"
+  examples: 
+    - /infra/dev
+    - /infra/dev/
+    - infra/dev
+- secret_name: This is the name the secret will have, it can be any alphanumeric with a maximum of 20
+  examples:
+    - servername
+    - serverport
+    - connectionstring
+- secret_value: Will contain the value you want to store for this secret
+  examples:
+    - myserver.com
+    - 8080
+    - database1.server.com:4333
+
+### Read secrets (Human readable)
+
+This command will look for the secret with <secret_name> in the path <secret_path> and will output the value in a human readable format.
+This is useful when you are looking for a value in the secret store. For automations check the "Export" command.
+
+secretmanager -read -path <secret_path> -name <secret_name>
+
+- secret_path: This is the path where the secret will be stored, it can start or end with a "/"
+  examples: 
+    - /infra/dev
+    - /infra/dev/
+    - infra/dev
+- secret_name: This is the name the secret will have, it can be any alphanumeric with a maximum of 20
+  examples:
+    - servername
+    - serverport
+    - connectionstring
+
+Example output:
+```
+kvcli.exe read -path /infra/dev -name serverport
+The value of the secret is:  443
+```
+
+### Export secrets (Automation)
+
+This command will output the value of a <secret_name> found in the path <secret_path> and will output the value without formatting.
+This is the best option for automation.
+
+secretmanager -export -path <secret_path> -name <secret_name>
+
+- secret_path: This is the path where the secret will be stored, it can start or end with a "/"
+  examples: 
+    - /infra/dev
+    - /infra/dev/
+    - infra/dev
+- secret_name: This is the name the secret will have, it can be any alphanumeric with a maximum of 20
+  examples:
+    - servername
+    - serverport
+    - connectionstring
+
+Example output:
+```
+kvcli.exe export -path /infra/dev -name serverport
+443
+```
+
+### List secrets 
+
+This command is useful to look for a secret in a path when you don't know the secrets stored in a particular path.
+
+secretmanager -list -path <secret_path>
+
+- secret_path: This is the path where the secret will be stored, it can start or end with a "/"
+  examples: 
+    - /infra/dev
+    - /infra/dev/
+    - infra/dev
+
+Example output:
+```
+kvcli.exe list -path /infra/dev
+The path for the secret is:  infra/dev/serverport
+The path for the secret is:  infra/dev/servername
+```
+
+## AWS (TODO)
+
+## GCP (TODO)
