@@ -31,6 +31,31 @@ Implementación
   - [ ] Manejo de Certs
   
 Agregar AWS vault
-  - [ ] TODO
+  - [x] Create IAM user
+  - [ ] Assign the correct permissions to IAM User to handle secrets
+    - [ ] secretsmanager:Name
+    - [ ] secretsmanager:Description
+    - [ ] secretsmanager:KmsKeyId
+    - [ ] aws:RequestTag/${TagKey}
+    - [ ] aws:ResourceTag/${TagKey}
+    - [ ] aws:TagKeys
+    - [ ] secretsmanager:ResourceTag/tag-key
+    - [ ] secretsmanager:AddReplicaRegions
+    - [ ] secretsmanager:ForceOverwriteReplicaSecret
+    - [ ] resourcetypes: Secret*
+    - [ ] secretsmanager:TagResource
+    - [ ] secretsmanager:UntagResource
+  - [ ] Learn how to create and delete secrets using GO SDK
+  - [ ] Add support for tagging of secrets
+    - Should I use tagresource? (https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_TagResource.html)
+    - Should I use untagresource? (https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_UntagResource.html)
+  - Information on what is returned as a secret from the SDK: (https://github.com/aws/aws-sdk-go-v2/blob/main/service/secretsmanager/types/types.go)
+  - Repo with the SDK implementation (https://github.com/aws/aws-sdk-go-v2/tree/main/service/secretsmanager)
+
+Add management for cloud providers:
+ - Ideally the CLI should also be able to configure the needed "stuff" in the cloud provider to be used
+   - In Azure create the SPN, assign it to the keyvault, grant permissions and retrieve the SPN clientid, secret, tenant (Also create a keyvault???)
+   - In AWS Create the IAM, policy, assign the policy and retrieve the IAM id and secret (Also create the secrets manager?)
+
 Agregar GCP vault
   - [ ] TODO
