@@ -1,10 +1,10 @@
-Implementación
+Implementation
 
-- [x] Crear una keyvault
-- [x] Crear un SPN para manejar los secrets del keyvault
-- [x] Dar permisos de secrets al SPN
-- [x] Crear un packet o modulo de GO para la solución
-- [x] Credenciales para acceder a keyvault como environment variables
+- [x] Create a keyvault
+- [x] Create an SPN to handle the secrets of the keyvault
+- [x] Grant permissions on the keyvault for the SPN
+- [x] Create a GO package/module
+- [x] Use environment variables to provide configuration to the CLI
   - [x] ClientID
   - [x] Secret
   - [x] TenantID
@@ -13,24 +13,22 @@ Implementación
   - [x] Path: "/infra/dev/cluster"
   - [x] SecretName: "Port"
   - [x] Value: "80"
-- [ ] Tareas:
-  - [x] Split del path por "/" (separador)
-  - [x] Crear tags en base al path
+- [ ] Tasks:
+  - [x] Split path by "/" 
+  - [x] Create tags depending on the path provided
     - [x] A: infra
     - [x] B: dev
     - [x] C: cluster
     - [x] SecretName: port
-    - [x] Valor en el secret --> Value(80)
-  - [x] Nombre del secret es un hash compuesto por: (Esto nos va a permitir mantener multiples versiones del mismo secret)
-    - [x] Todos los tags + SecretName
-  - [x] Write de secrets
-    - [x] Usando argumentos y flags desde la linea de comandos
-  - [x] Read de secrets
-    - [x] Usando argumentos y flags desde la linea de comandos
-  - [ ] Manejo de Keys
-  - [ ] Manejo de Certs
+    - [x] Secret value --> Value(80)
+  - [x] The name of the secret is a hash made by the combination of: (This will allow us to keep multiple versions of the same secret)
+    - [x] all the tags + SecretName
+  - [x] Write secrets
+    - [x] Using arguments and flags from command line
+  - [x] Read secrets
+    - [x] Using arguments and flags from command line
   
-Agregar AWS vault
+AWS secrets manager
   - [x] Create IAM user
   - [ ] Assign the correct permissions to IAM User to handle secrets
     - [ ] secretsmanager:Name
@@ -57,5 +55,5 @@ Add management for cloud providers:
    - In Azure create the SPN, assign it to the keyvault, grant permissions and retrieve the SPN clientid, secret, tenant (Also create a keyvault???)
    - In AWS Create the IAM, policy, assign the policy and retrieve the IAM id and secret (Also create the secrets manager?)
 
-Agregar GCP vault
+GCP secretmanager
   - [ ] TODO
