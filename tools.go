@@ -76,3 +76,9 @@ func JsonPrint(i interface{}) string {
 func CreateHash(input string) string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(input)))
 }
+
+func DisplayHelpUsage() {
+	// This function should display a help message explaining how to use the cli
+
+	fmt.Println("Implement help usage message!")
+}
