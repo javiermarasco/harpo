@@ -1,3 +1,3 @@
-module keyvaultcli.com/kvcli
+module keyvaultcli.com/secretscli
 
 go 1.17
