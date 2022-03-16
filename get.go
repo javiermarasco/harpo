@@ -1,13 +1,19 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
 )
 
-func GetSecrets(creds *auth) secret_list {
+func GetAzSecrets(creds *auth) secret_list {
 
 	base_uri := fmt.Sprint("https://", creds.KeyVault, ".vault.azure.net")
 	uri := fmt.Sprint(base_uri, "/secrets?api-version=7.2")
@@ -35,4 +41,62 @@ func GetSecrets(creds *auth) secret_list {
 		fmt.Println("Secret not found, check the path or the secret name.")
 	}
 	return response
+}
+
+func GetAWSSecret(path string, region string, secretname string) {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	conn := secretsmanager.NewFromConfig(cfg, func(o *secretsmanager.Options) {
+		o.Region = region
+	})
+	input := secretsmanager.GetSecretValueInput{
+		SecretId:     aws.String(secretname),
+		VersionStage: aws.String("AWSCURRENT"), // VersionStage defaults to AWSCURRENT if unspecified
+	}
+
+	result, err := conn.GetSecretValue(context.TODO(), &input)
+	if err != nil {
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
+	}
+	var secretString string
+	if result.SecretString != nil {
+		secretString = *result.SecretString
+		fmt.Println(secretString)
+	}
+}
+
+func GetAWSSecretV2(path string, region string, secretname string) {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	conn := secretsmanager.NewFromConfig(cfg, func(o *secretsmanager.Options) {
+		o.Region = region
+	})
+
+	values := []string{"somethingnewunderthesun39"}
+
+	myfilter := types.Filter{
+		Key:    "tag-value",
+		Values: values,
+	}
+	myfilterS := []types.Filter{}
+	myfilterS = append(myfilterS, myfilter)
+
+	ListInputStruc := secretsmanager.ListSecretsInput{
+		Filters: myfilterS,
+	}
+
+	outputlist, err := conn.ListSecrets(context.TODO(), &ListInputStruc)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(outputlist)
 }
