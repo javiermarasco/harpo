@@ -14,7 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
 )
 
-func WriteSecret(path string, secret secret_struct, creds *auth) {
+func WriteAzSecret(path string, secret secret_struct, creds *auth) {
 	base_uri := fmt.Sprint("https://", creds.KeyVault, ".vault.azure.net")
 	inputForHash := path + "+" + secret.Name
 	secretName := CreateHash(inputForHash)
