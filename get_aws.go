@@ -20,7 +20,7 @@ func OldgetAWSSecret() {
 	region := "eu-central-1"
 
 	//Create a Secrets Manager client
-	sess, err := session.NewSession(&aws.Config{Credentials: credentials.NewStaticCredentials("AKIATZTBRFU7OXNHGMXA", "meI3AO4GGL0aIncCqRNaA2b1CdiM/5gtyyIf+xXQ", "")})
+	sess, err := session.NewSession(&aws.Config{Credentials: credentials.NewStaticCredentials("", "", "")})
 	if err != nil {
 		// Handle session creation error
 		fmt.Println(err.Error())
