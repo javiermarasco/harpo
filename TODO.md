@@ -71,4 +71,8 @@ EXTRAS:
   - [ ] Include an example of write and read a secret for each cloud provider
   - [ ] Include an explanation of the needed environment variables`
 
+VALIDATIONS:
+- [ ] On Write, no secret should be created if the path AND secret NAME already exists (to prevent hash to duplicate)
+
+
 command az[1] read[2] -path -name -value
