@@ -48,7 +48,7 @@ func main() {
 			secret.Name = name
 			secret.Value = value
 
-			WriteSecret(newpath, secret, &credentials)
+			WriteAzSecret(newpath, secret, &credentials)
 
 		case "AWS":
 			newpath := SanitizePath(path)
@@ -80,7 +80,8 @@ func main() {
 			fmt.Println("The value of the secret is: ", value)
 
 		case "AWS":
-			getAWSSecret()
+			newpath := SanitizePath(path)
+			GetAWSSecretV2(newpath, "eu-central-1", name)
 		default:
 
 		}
@@ -120,7 +121,7 @@ func main() {
 			newpath := SanitizePath(path)
 			GetToken(&credentials)
 
-			listOfSecrets := GetSecrets(&credentials)
+			listOfSecrets := GetAzSecrets(&credentials)
 			for _, item := range listOfSecrets.Value {
 				current_path := TagsToPath(item.Tags, newpath)
 				if current_path != "" {
