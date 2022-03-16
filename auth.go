@@ -6,8 +6,19 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 )
+
+func GetAzureConfig() auth {
+	Client_Id := os.Getenv("AZ_clientid")
+	Client_Secret := os.Getenv("AZ_clientsecret")
+	Tenant_Id := os.Getenv("AZ_tenantid")
+	KeyvaultName := os.Getenv("AZ_kvname")
+
+	return auth{ClientID: Client_Id, ClientSecret: Client_Secret, Resource: "https://vault.azure.net", TenantID: Tenant_Id, KeyVault: KeyvaultName}
+
+}
 
 func GetToken(credentials *auth) {
 	param := url.Values{}
