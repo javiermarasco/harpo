@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-func GetSecrets(keyvault_name string, creds *auth) secret_list {
+func GetSecrets(creds *auth) secret_list {
 
-	base_uri := fmt.Sprint("https://", keyvault_name, ".vault.azure.net")
+	base_uri := fmt.Sprint("https://", creds.KeyVault, ".vault.azure.net")
 	uri := fmt.Sprint(base_uri, "/secrets?api-version=7.2")
 	req, _ := http.NewRequest("GET", uri, nil)
 	req.Header.Add("Authorization", fmt.Sprint("bearer ", creds.Token))
