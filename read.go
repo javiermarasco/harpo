@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-func ReadSecret(keyvault_name string, path string, secret_name secret_struct, creds *auth) (value string, error string) {
+func ReadSecret(path string, secret_name secret_struct, creds *auth) (value string, error string) {
 	secretname := CreateHash(path + "+" + secret_name.Name)
-	base_uri := fmt.Sprint("https://", keyvault_name, ".vault.azure.net")
+	base_uri := fmt.Sprint("https://", creds.KeyVault, ".vault.azure.net")
 	uri := fmt.Sprint(base_uri, "/secrets/", secretname, "?api-version=7.2")
 	value = ""
 	error = ""
