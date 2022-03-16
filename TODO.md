@@ -60,13 +60,15 @@ GCP secretmanager
 
 EXTRAS:
 
-- [ ] Ability to copy a secret from one platform to another (AWS to Azure, Azure to GCP, GCP to Azure, etc.)
+`- [ ] Ability to copy a secret from one platform to another (AWS to Azure, Azure to GCP, GCP to Azure, etc.)
 - [ ] Ability to MIGRATE a secret from one platform to another (copy first then remove from origin)
 - [ ] Add extra argument in the cli to specify which cloud provider to use (implement all the flags)
-  - [ ] secretcli az read (to read a secret from azure)
-  - [ ] secretcli aws read (to read a secret from aws)
+  - [x] secretcli az read (to read a secret from azure)
+  - [x] secretcli aws read (to read a secret from aws)
   - [ ] secretcli gcp read (to read a secret from gcp)
 - [ ] Help message 
   - [ ] Include all the flags and how to use them
   - [ ] Include an example of write and read a secret for each cloud provider
-  - [ ] Include an explanation of the needed environment variables
+  - [ ] Include an explanation of the needed environment variables`
+
+command az[1] read[2] -path -name -value
