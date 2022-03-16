@@ -27,4 +27,5 @@ type auth struct {
 	Resource     string `json:"resource"`
 	TenantID     string `json:"tenant_id"`
 	Token        string `json:"access_token"`
+	KeyVault     string `json:"-"`
 }
