@@ -1,13 +1,19 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
 
-func ReadSecret(path string, secret_name secret_struct, creds *auth) (value string, error string) {
+func ReadAzSecret(path string, secret_name secret_struct, creds *auth) (value string, error string) {
 	secretname := CreateHash(path + "+" + secret_name.Name)
 	base_uri := fmt.Sprint("https://", creds.KeyVault, ".vault.azure.net")
 	uri := fmt.Sprint(base_uri, "/secrets/", secretname, "?api-version=7.2")
@@ -38,4 +44,28 @@ func ReadSecret(path string, secret_name secret_struct, creds *auth) (value stri
 		error = "Secret not found, check the path or the secret name."
 	}
 	return value, error
+}
+
+func ReadAWSSecret(path string, secretname string) (string, error) {
+	region := os.Getenv("AWS_REGION")
+	inputForHash := path + "+" + secretname
+	secretNameHashed := CreateHash(inputForHash)
+
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	conn := secretsmanager.NewFromConfig(cfg, func(o *secretsmanager.Options) {
+		o.Region = region
+	})
+	mysecretvalueinput := secretsmanager.GetSecretValueInput{
+		SecretId: &secretNameHashed,
+	}
+	mysecret, err := conn.GetSecretValue(context.TODO(), &mysecretvalueinput)
+
+	if err != nil {
+		return "", err
+	}
+	return aws.ToString(mysecret.SecretString), nil
 }
