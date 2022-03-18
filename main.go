@@ -72,7 +72,7 @@ func main() {
 			var secret secret_struct
 			secret.Name = name
 
-			value, err := ReadSecret(newpath, secret, &credentials)
+			value, err := ReadAzSecret(newpath, secret, &credentials)
 			if err != "" {
 				fmt.Println(err)
 				return
@@ -81,7 +81,7 @@ func main() {
 
 		case "AWS":
 			newpath := SanitizePath(path)
-			value, err := GetAWSSecretV2(newpath, name)
+			value, err := ReadAWSSecret(newpath, name)
 			if err != nil {
 				fmt.Println("An error ocurred while reading the secret from AWS.")
 				return
@@ -107,7 +107,7 @@ func main() {
 			var secret secret_struct
 			secret.Name = name
 
-			value, err := ReadSecret(newpath, secret, &credentials)
+			value, err := ReadAzSecret(newpath, secret, &credentials)
 			if err != "" {
 				fmt.Println(err)
 				return
@@ -115,7 +115,7 @@ func main() {
 			fmt.Println(value)
 		case "AWS":
 			newpath := SanitizePath(path)
-			value, err := GetAWSSecretV2(newpath, name)
+			value, err := ReadAWSSecret(newpath, name)
 			if err != nil {
 				fmt.Println("An error ocurred while reading the secret from AWS.")
 				return
@@ -147,7 +147,7 @@ func main() {
 
 			}
 		case "AWS":
-			newpath := SanitizePath(path)
+			//newpath := SanitizePath(path)
 		default:
 		}
 
