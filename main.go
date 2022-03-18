@@ -81,31 +81,48 @@ func main() {
 
 		case "AWS":
 			newpath := SanitizePath(path)
-			GetAWSSecretV2(newpath, "eu-central-1", name)
+			value, err := GetAWSSecretV2(newpath, name)
+			if err != nil {
+				fmt.Println("An error ocurred while reading the secret from AWS.")
+				return
+			}
+			fmt.Println("The value of the secret is: ", value)
 		default:
 
 		}
 
 	case "EXPORT":
-		if len(os.Args) < 6 {
-			fmt.Println("A path and name needs to be provided.")
-			fmt.Println("Example: secretscli.exe (provider) export -path /infra/dev -name portnumber ")
-			return
-		}
-		credentials := GetAzureConfig()
-		// name =>  KV_<secretname>
-		newpath := SanitizePath(path)
-		GetToken(&credentials)
+		switch provider {
+		case "AZ":
+			if len(os.Args) < 6 {
+				fmt.Println("A path and name needs to be provided.")
+				fmt.Println("Example: secretscli.exe (provider) export -path /infra/dev -name portnumber ")
+				return
+			}
+			credentials := GetAzureConfig()
+			// name =>  KV_<secretname>
+			newpath := SanitizePath(path)
+			GetToken(&credentials)
 
-		var secret secret_struct
-		secret.Name = name
+			var secret secret_struct
+			secret.Name = name
 
-		value, err := ReadSecret(newpath, secret, &credentials)
-		if err != "" {
-			fmt.Println(err)
-			return
+			value, err := ReadSecret(newpath, secret, &credentials)
+			if err != "" {
+				fmt.Println(err)
+				return
+			}
+			fmt.Println(value)
+		case "AWS":
+			newpath := SanitizePath(path)
+			value, err := GetAWSSecretV2(newpath, name)
+			if err != nil {
+				fmt.Println("An error ocurred while reading the secret from AWS.")
+				return
+			}
+			fmt.Println(value)
+		default:
 		}
-		fmt.Println(value)
 
 	case "LIST":
 
@@ -130,7 +147,7 @@ func main() {
 
 			}
 		case "AWS":
-
+			newpath := SanitizePath(path)
 		default:
 		}
 
