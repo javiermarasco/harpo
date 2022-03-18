@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
 )
 
 func GetAzSecrets(creds *auth) secret_list {
@@ -68,35 +67,4 @@ func GetAWSSecret(path string, region string, secretname string) {
 		secretString = *result.SecretString
 		fmt.Println(secretString)
 	}
-}
-
-func GetAWSSecretV2(path string, region string, secretname string) {
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	conn := secretsmanager.NewFromConfig(cfg, func(o *secretsmanager.Options) {
-		o.Region = region
-	})
-
-	values := []string{"somethingnewunderthesun39"}
-
-	myfilter := types.Filter{
-		Key:    "tag-value",
-		Values: values,
-	}
-	myfilterS := []types.Filter{}
-	myfilterS = append(myfilterS, myfilter)
-
-	ListInputStruc := secretsmanager.ListSecretsInput{
-		Filters: myfilterS,
-	}
-
-	outputlist, err := conn.ListSecrets(context.TODO(), &ListInputStruc)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(outputlist)
 }
