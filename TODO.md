@@ -28,6 +28,7 @@ Implementation
   - [x] Read secrets
     - [x] Using arguments and flags from command line
   - [x] Delete secrets
+  - [ ] Update
 AWS secrets manager
   - [x] Create IAM user
   - [ ] Assign the correct permissions to IAM User to handle secrets
@@ -52,7 +53,7 @@ AWS secrets manager
   - [x] Delete
   - [x] List
   - [x] Export
-
+  - [ ] Update
 Add management for cloud providers:
  - Ideally the CLI should also be able to configure the needed "stuff" in the cloud provider to be used
    - In Azure create the SPN, assign it to the keyvault, grant permissions and retrieve the SPN clientid, secret, tenant (Also create a keyvault???)
@@ -63,6 +64,9 @@ GCP secretmanager
 
 EXTRAS:
 
+- [ ] Bulk process (all actions getting a csv file for managing large amount of secrets)
+- [ ] Validations on write (nicely fail when trying to write a secret that already exists and do not overwrite)
+- [ ] make the arguments not fix to a position (they should be provided in any order)
 - [x] Ability to copy a secret from one platform to another (AWS to Azure, Azure to GCP, GCP to Azure, etc.)
 - [x] Ability to MIGRATE a secret from one platform to another (copy first then remove from origin)
 - [x] Add extra argument in the cli to specify which cloud provider to use (implement all the flags)
