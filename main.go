@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
 func main() {
@@ -52,7 +54,7 @@ func main() {
 
 		case "AWS":
 			newpath := SanitizePath(path)
-			WriteAWSSecret(newpath, "eu-central-1", name, value)
+			WriteAWSSecret(newpath, name, value)
 
 		default:
 		}
@@ -147,10 +149,150 @@ func main() {
 
 			}
 		case "AWS":
-			//newpath := SanitizePath(path)
+			newpath := SanitizePath(path)
+
+			secrets, err := GetAwsSecrets(newpath)
+			if err != nil {
+				fmt.Println("An error ocurred while retrieving the secret from AWS.")
+				return
+			}
+
+			for _, secret := range secrets {
+				var secretpath string
+				var secretname string
+				for _, value := range secret.Tags {
+
+					if aws.ToString(value.Key) == "Path" {
+						secretpath = aws.ToString(value.Value)
+
+					}
+					if aws.ToString(value.Key) == "SecretName" {
+						secretname = aws.ToString(value.Value)
+					}
+
+				}
+				fmt.Println("The path for the secret is: ", secretpath+"/"+secretname)
+			}
+
 		default:
 		}
 
+	case "DELETE":
+		switch provider {
+		case "AZ":
+			newpath := SanitizePath(path)
+			credentials := GetAzureConfig()
+			GetToken(&credentials)
+			fmt.Println("Deleteing secret from Azure Key Vault")
+			DeleteAzSecret(newpath, secret_struct{Name: name}, &credentials)
+		case "AWS":
+			newpath := SanitizePath(path)
+			fmt.Println("Deleteing secret from AWS secrets manager")
+			DeleteAwsSecret(newpath, name)
+		}
+	case "COPY":
+		switch provider {
+		case "AWS":
+			destination := strings.ToUpper(os.Args[8])
+			newpath := SanitizePath(path)
+			// copy a secret from AZ to AWS or from AWS to AZ
+			// aws copy -path "" -name "" -destination[7] <destination>[8]
+			switch destination {
+			case "AZ":
+
+				//Read from AWS
+				secretvalue, err := ReadAWSSecret(newpath, name)
+				if err != nil {
+					fmt.Println("An error found while reading the AWS secret")
+				}
+
+				fmt.Println("Copying secret from AWS to AZ")
+				credentials := GetAzureConfig()
+				GetToken(&credentials)
+				// Write to AZ
+				WriteAzSecret(newpath, secret_struct{Name: name, Value: secretvalue}, &credentials)
+			case "AWS":
+				fmt.Println("Not possible to copy from AWS to AWS")
+			default:
+			}
+		case "AZ":
+			// copy from AZ to AWS
+			destination := strings.ToUpper(os.Args[8])
+			newpath := SanitizePath(path)
+			switch destination {
+			case "AZ":
+				fmt.Println("Not possible to copy from AZ to AZ")
+			case "AWS":
+
+				//read from AZ
+				credentials := GetAzureConfig()
+				GetToken(&credentials)
+				fmt.Println("Copying secret from AZ to AWS")
+				value, err := ReadAzSecret(newpath, secret_struct{Name: name}, &credentials)
+				if err != "" {
+					fmt.Println(err)
+					return
+				}
+
+				// Write to AWS
+				WriteAWSSecret(newpath, name, value)
+
+			default:
+
+			}
+		}
+	case "MIGRATE":
+		switch provider {
+		case "AWS":
+			destination := strings.ToUpper(os.Args[8])
+			newpath := SanitizePath(path)
+			switch destination {
+			case "AZ":
+
+				//Read from AWS
+				secretvalue, err := ReadAWSSecret(newpath, name)
+				if err != nil {
+					fmt.Println("An error found while reading the AWS secret")
+				}
+
+				fmt.Println("Migrating secret from AWS to AZ")
+				credentials := GetAzureConfig()
+				GetToken(&credentials)
+				// Write to AZ
+				WriteAzSecret(newpath, secret_struct{Name: name, Value: secretvalue}, &credentials)
+				DeleteAwsSecret(newpath, name)
+			case "AWS":
+				fmt.Println("Not possible to migrate from AWS to AWS")
+			default:
+			}
+
+		case "AZ":
+			destination := strings.ToUpper(os.Args[8])
+			newpath := SanitizePath(path)
+			switch destination {
+			case "AZ":
+				fmt.Println("Not possible to migrate from AZ to AZ")
+			case "AWS":
+
+				//read from AZ
+				credentials := GetAzureConfig()
+				GetToken(&credentials)
+				fmt.Println("Migrating secret from AZ to AWS")
+				value, err := ReadAzSecret(newpath, secret_struct{Name: name}, &credentials)
+				if err != "" {
+					fmt.Println(err)
+					return
+				}
+
+				// Write to AWS
+				WriteAWSSecret(newpath, name, value)
+				DeleteAzSecret(newpath, secret_struct{Name: name}, &credentials)
+			default:
+
+			}
+		default:
+
+		}
 	default:
 		fmt.Println("Usage: 'kvcli write/read/export/list' ")
 	}
