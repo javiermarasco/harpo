@@ -1,4 +1,4 @@
-# Secret Manager CLI
+# Harpo (short for harpocrates)
 
 The objective of this cli is to be able to manage secrets in Azure, AWS and GCP by using a path to 
 specify where a secret is stored in a "folder structure" approach while providing an easy way to list 

@@ -27,7 +27,7 @@ Implementation
     - [x] Using arguments and flags from command line
   - [x] Read secrets
     - [x] Using arguments and flags from command line
-  
+  - [x] Delete secrets
 AWS secrets manager
   - [x] Create IAM user
   - [ ] Assign the correct permissions to IAM User to handle secrets
@@ -43,12 +43,15 @@ AWS secrets manager
     - [ ] resourcetypes: Secret*
     - [ ] secretsmanager:TagResource
     - [ ] secretsmanager:UntagResource
-  - [ ] Learn how to create and delete secrets using GO SDK
-  - [ ] Add support for tagging of secrets
-    - Should I use tagresource? (https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_TagResource.html)
-    - Should I use untagresource? (https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_UntagResource.html)
+  - [x] Learn how to create and delete secrets using GO SDK
+  - [x] Add support for tagging of secrets
   - Information on what is returned as a secret from the SDK: (https://github.com/aws/aws-sdk-go-v2/blob/main/service/secretsmanager/types/types.go)
   - Repo with the SDK implementation (https://github.com/aws/aws-sdk-go-v2/tree/main/service/secretsmanager)
+  - [x] Read
+  - [x] Write
+  - [x] Delete
+  - [x] List
+  - [x] Export
 
 Add management for cloud providers:
  - Ideally the CLI should also be able to configure the needed "stuff" in the cloud provider to be used
@@ -60,9 +63,9 @@ GCP secretmanager
 
 EXTRAS:
 
-`- [ ] Ability to copy a secret from one platform to another (AWS to Azure, Azure to GCP, GCP to Azure, etc.)
-- [ ] Ability to MIGRATE a secret from one platform to another (copy first then remove from origin)
-- [ ] Add extra argument in the cli to specify which cloud provider to use (implement all the flags)
+- [x] Ability to copy a secret from one platform to another (AWS to Azure, Azure to GCP, GCP to Azure, etc.)
+- [x] Ability to MIGRATE a secret from one platform to another (copy first then remove from origin)
+- [x] Add extra argument in the cli to specify which cloud provider to use (implement all the flags)
   - [x] secretcli az read (to read a secret from azure)
   - [x] secretcli aws read (to read a secret from aws)
   - [ ] secretcli gcp read (to read a secret from gcp)
