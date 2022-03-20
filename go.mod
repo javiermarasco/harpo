@@ -1,4 +1,4 @@
-module keyvaultcli.com/secretscli
+module keyvaultcli.com/harpo
 
 go 1.17
 
