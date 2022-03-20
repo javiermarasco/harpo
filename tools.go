@@ -24,13 +24,18 @@ func TagsToPath(Tags map[string]string, Path string) string {
 
 			// Check the positional tags in inputTags matches the ones in the just created path
 			// and toggle the returnValue switch based on match
-			for index, _ := range inputTags {
-				if returnPathSlice[index] == inputTags[index] {
-					returnValue = true
-				} else {
-					returnValue = false
+			if len(inputTags) >= len(returnPathSlice) {
+				returnValue = false
+			} else {
+				for index, _ := range inputTags {
+					if returnPathSlice[index] == inputTags[index] {
+						returnValue = true
+					} else {
+						returnValue = false
+					}
 				}
 			}
+
 			break
 		}
 	}

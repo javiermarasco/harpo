@@ -54,21 +54,16 @@ func GetToken(credentials *auth) {
 	if resp.StatusCode == http.StatusOK {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			//Failed to read response.
 			panic(err)
 		}
 		var response response_token
 
-		if err := json.Unmarshal(body, &response); err != nil { // Parse []byte to go struct pointer
+		if err := json.Unmarshal(body, &response); err != nil {
 			fmt.Println("Can not unmarshal JSON")
 		}
-
-		//fmt.Println(JsonPrint(response))
-		//fmt.Println(response.AccessToken)
 		credentials.Token = response.AccessToken
 
 	} else {
-		//The status is not Created. print the error.
 		fmt.Println("Get failed with error: ", resp)
 	}
 

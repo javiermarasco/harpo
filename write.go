@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -67,12 +68,10 @@ func WriteAzSecret(path string, secret secret_struct, creds *auth) {
 
 }
 
-func WriteAWSSecret(path string, region string, secretname string, secretvalue string) {
+func WriteAWSSecret(path string, secretname string, secretvalue string) {
+	region := os.Getenv("AWS_REGION")
 	inputForHash := path + "+" + secretname
 	secretNameHashed := CreateHash(inputForHash)
-
-	var newtags = make(map[string]string)
-	newtags = PathToTags(path)
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
@@ -84,21 +83,18 @@ func WriteAWSSecret(path string, region string, secretname string, secretvalue s
 	})
 
 	tags := []types.Tag{}
-	for k, v := range newtags {
-		temptag := types.Tag{Key: aws.String(k), Value: aws.String(v)}
-		tags = append(tags, temptag)
-	}
-	temptag := types.Tag{Key: aws.String("SecretName"), Value: aws.String(secretname)}
-	tags = append(tags, temptag)
+	secretnametag := types.Tag{Key: aws.String("SecretName"), Value: aws.String(secretname)}
+	pathtag := types.Tag{Key: aws.String("Path"), Value: aws.String(path)}
+	tags = append(tags, secretnametag)
+	tags = append(tags, pathtag)
 
 	input := secretsmanager.CreateSecretInput{
 		Name:         aws.String(secretNameHashed),
 		SecretString: aws.String(secretvalue),
 		Tags:         tags,
 	}
-	output, err := conn.CreateSecret(context.TODO(), &input)
+	_, err = conn.CreateSecret(context.TODO(), &input)
 	if err != nil {
 		fmt.Println("Error writing secret.")
 	}
-	fmt.Println(output)
 }

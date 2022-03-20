@@ -1,10 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
 )
 
 func GetAzSecrets(creds *auth) secret_list {
@@ -35,4 +41,35 @@ func GetAzSecrets(creds *auth) secret_list {
 		fmt.Println("Secret not found, check the path or the secret name.")
 	}
 	return response
+}
+
+func GetAwsSecrets(path string) ([]types.SecretListEntry, error) {
+	region := os.Getenv("AWS_REGION")
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		fmt.Println(err)
+	}
+	conn := secretsmanager.NewFromConfig(cfg, func(o *secretsmanager.Options) {
+		o.Region = region
+	})
+	values := []string{path}
+
+	myfiltervalues := types.Filter{
+		Key:    "tag-value",
+		Values: values,
+	}
+
+	myfilters := []types.Filter{myfiltervalues}
+
+	mylistsecretinput := secretsmanager.ListSecretsInput{
+		Filters: myfilters,
+	}
+
+	result, err := conn.ListSecrets(context.TODO(), &mylistsecretinput)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	return result.SecretList, nil
 }
