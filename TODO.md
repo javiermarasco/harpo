@@ -28,6 +28,9 @@ Implementation
   - [x] Read secrets
     - [x] Using arguments and flags from command line
   - [x] Delete secrets
+  - [x] Export
+  - [x] Copy
+  - [x] Migrate
   - [ ] Update
 AWS secrets manager
   - [x] Create IAM user
@@ -53,6 +56,8 @@ AWS secrets manager
   - [x] Delete
   - [x] List
   - [x] Export
+  - [x] Copy
+  - [x] Migrate
   - [ ] Update
 Add management for cloud providers:
  - Ideally the CLI should also be able to configure the needed "stuff" in the cloud provider to be used
@@ -60,7 +65,17 @@ Add management for cloud providers:
    - In AWS Create the IAM, policy, assign the policy and retrieve the IAM id and secret (Also create the secrets manager?)
 
 GCP secretmanager
-  - [ ] TODO
+  - [x] Create IAM user
+  - [x] Learn how to create and delete secrets using GO SDK
+  - [x] Add support for tagging of secrets
+  - [x] Read
+  - [x] Write
+  - [x] Delete
+  - [x] List
+  - [x] Export
+  - [x] Copy
+  - [x] Migrate
+  - [ ] Update
 
 EXTRAS:
 
@@ -72,7 +87,7 @@ EXTRAS:
 - [x] Add extra argument in the cli to specify which cloud provider to use (implement all the flags)
   - [x] secretcli az read (to read a secret from azure)
   - [x] secretcli aws read (to read a secret from aws)
-  - [ ] secretcli gcp read (to read a secret from gcp)
+  - [x] secretcli gcp read (to read a secret from gcp)
 - [ ] Help message 
   - [ ] Include all the flags and how to use them
   - [ ] Include an example of write and read a secret for each cloud provider

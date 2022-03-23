@@ -32,6 +32,10 @@ You need to define some environment variables in order to use `harpo`, those dep
 - "AWS_SECRET_ACCESS_KEY" (The access key of the user that will be used to access the Secrets Manager)
 - "AWS_REGION" (The region where the Secrets Manager instance is defined)
 
+
+### GCP
+- "GOOGLE_APPLICATION_CREDENTIALS" (Contains the path to the json file with the credentials for your google cloud account)
+
 For AWS the following permissions are needed:
 secretsmanager:Name
   - secretsmanager:Description
