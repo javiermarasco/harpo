@@ -7,10 +7,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 func ReadAzSecret(path string, secret_name secret_struct, creds *auth) (value string, error string) {
@@ -68,4 +71,26 @@ func ReadAWSSecret(path string, secretname string) (string, error) {
 		return "", err
 	}
 	return aws.ToString(mysecret.SecretString), nil
+}
+
+func ReadGCPSecret(path string, secretname string) (string, error) {
+	parent := "projects/842557969287"
+	// Create the client.
+	ctx := context.Background()
+	client, errclient := secretmanager.NewClient(ctx)
+	if errclient != nil {
+		return "", errclient
+	}
+	defer client.Close()
+
+	req := &secretmanagerpb.AccessSecretVersionRequest{
+		Name: parent + "/secrets/" + strings.ToLower(secretname) + "/versions/latest",
+	}
+
+	secret, errget := client.AccessSecretVersion(ctx, req)
+	if errget != nil {
+		return "", errget
+	}
+
+	return string(secret.Payload.Data), nil
 }

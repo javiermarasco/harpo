@@ -15,8 +15,8 @@ func main() {
 		return
 	}
 	provider := os.Args[1]
-	if provider != "az" && provider != "aws" {
-		fmt.Println("Provider should be 'az' or 'aws'")
+	if provider != "az" && provider != "aws" && provider != "gcp" {
+		fmt.Println("Provider should be 'az', 'aws' or 'gcp'")
 		return
 	}
 	provider = strings.ToUpper(provider)
@@ -56,6 +56,9 @@ func main() {
 			newpath := SanitizePath(path)
 			WriteAWSSecret(newpath, name, value)
 
+		case "GCP":
+			newpath := SanitizePath(path)
+			WriteGCPSecret(newpath, name, value)
 		default:
 		}
 
@@ -86,6 +89,15 @@ func main() {
 			value, err := ReadAWSSecret(newpath, name)
 			if err != nil {
 				fmt.Println("An error ocurred while reading the secret from AWS.")
+				return
+			}
+			fmt.Println("The value of the secret is: ", value)
+
+		case "GCP":
+			newpath := SanitizePath(path)
+			value, err := ReadGCPSecret(newpath, name)
+			if err != nil {
+				fmt.Println("An error ocurred while reading the secret from GCP.")
 				return
 			}
 			fmt.Println("The value of the secret is: ", value)
@@ -120,6 +132,14 @@ func main() {
 			value, err := ReadAWSSecret(newpath, name)
 			if err != nil {
 				fmt.Println("An error ocurred while reading the secret from AWS.")
+				return
+			}
+			fmt.Println(value)
+		case "GCP":
+			newpath := SanitizePath(path)
+			value, err := ReadGCPSecret(newpath, name)
+			if err != nil {
+				fmt.Println("An error ocurred while reading the secret from GCP.")
 				return
 			}
 			fmt.Println(value)
@@ -173,6 +193,9 @@ func main() {
 				}
 				fmt.Println("The path for the secret is: ", secretpath+"/"+secretname)
 			}
+		case "GCP":
+			newpath := SanitizePath(path)
+			GetGcpSecrets(newpath)
 
 		default:
 		}
@@ -189,23 +212,23 @@ func main() {
 			newpath := SanitizePath(path)
 			fmt.Println("Deleteing secret from AWS secrets manager")
 			DeleteAwsSecret(newpath, name)
+		case "GCP":
+			fmt.Println("Deleteing secret from GCP secret manager")
+			newpath := SanitizePath(path)
+			DeleteGCPSecret(newpath, name)
 		}
 	case "COPY":
 		switch provider {
 		case "AWS":
 			destination := strings.ToUpper(os.Args[8])
 			newpath := SanitizePath(path)
-			// copy a secret from AZ to AWS or from AWS to AZ
-			// aws copy -path "" -name "" -destination[7] <destination>[8]
+			//Read from AWS
+			secretvalue, err := ReadAWSSecret(newpath, name)
+			if err != nil {
+				fmt.Println("An error found while reading the AWS secret")
+			}
 			switch destination {
 			case "AZ":
-
-				//Read from AWS
-				secretvalue, err := ReadAWSSecret(newpath, name)
-				if err != nil {
-					fmt.Println("An error found while reading the AWS secret")
-				}
-
 				fmt.Println("Copying secret from AWS to AZ")
 				credentials := GetAzureConfig()
 				GetToken(&credentials)
@@ -213,88 +236,199 @@ func main() {
 				WriteAzSecret(newpath, secret_struct{Name: name, Value: secretvalue}, &credentials)
 			case "AWS":
 				fmt.Println("Not possible to copy from AWS to AWS")
+
+			case "GCP":
+				// write to GCP
+				fmt.Println("Copying secret from AWS to GCP")
+				WriteGCPSecret(newpath, name, secretvalue)
 			default:
 			}
 		case "AZ":
 			// copy from AZ to AWS
 			destination := strings.ToUpper(os.Args[8])
 			newpath := SanitizePath(path)
+			//read from AZ
+			credentials := GetAzureConfig()
+			GetToken(&credentials)
+			value, err := ReadAzSecret(newpath, secret_struct{Name: name}, &credentials)
+			if err != "" {
+				fmt.Println(err)
+				return
+			}
+
 			switch destination {
 			case "AZ":
 				fmt.Println("Not possible to copy from AZ to AZ")
 			case "AWS":
-
-				//read from AZ
-				credentials := GetAzureConfig()
-				GetToken(&credentials)
-				fmt.Println("Copying secret from AZ to AWS")
-				value, err := ReadAzSecret(newpath, secret_struct{Name: name}, &credentials)
-				if err != "" {
-					fmt.Println(err)
-					return
-				}
-
 				// Write to AWS
+				fmt.Println("Copying secret from AZ to AWS")
 				WriteAWSSecret(newpath, name, value)
+			case "GCP":
+				// write to GCP
+				fmt.Println("Copying secret from AZ to GCP")
+				WriteGCPSecret(newpath, name, value)
 
 			default:
 
 			}
-		}
-	case "MIGRATE":
-		switch provider {
-		case "AWS":
+		case "GCP":
+			// copy from GCP to AZ
 			destination := strings.ToUpper(os.Args[8])
 			newpath := SanitizePath(path)
+
+			// Read from GCP
+			value, err := ReadGCPSecret(newpath, name)
+			if err != nil {
+				fmt.Println("An error ocurred while reading the secret from GCP.")
+				return
+			}
 			switch destination {
 			case "AZ":
+				// Write in AZ
+				fmt.Println("Copying secret from GCP to AZ")
+				credentials := GetAzureConfig()
+				GetToken(&credentials)
+				// Write to AZ
+				WriteAzSecret(newpath, secret_struct{Name: name, Value: value}, &credentials)
+			case "AWS":
+				// Write in AWS
+				fmt.Println("Copying secret from GCP to AWS")
+				WriteAWSSecret(newpath, name, value)
 
+			case "GCP":
+				fmt.Println("Not possible to copy from GCP to GCP")
+			default:
+			}
+		case "MIGRATE":
+			switch provider {
+			case "AWS":
+				destination := strings.ToUpper(os.Args[8])
+				newpath := SanitizePath(path)
 				//Read from AWS
 				secretvalue, err := ReadAWSSecret(newpath, name)
 				if err != nil {
 					fmt.Println("An error found while reading the AWS secret")
 				}
+				switch destination {
+				case "AZ":
+					fmt.Println("Migrating secret from AWS to AZ")
+					credentials := GetAzureConfig()
+					GetToken(&credentials)
+					// Write to AZ
+					err := WriteAzSecret(newpath, secret_struct{Name: name, Value: secretvalue}, &credentials)
+					if err != nil {
+						fmt.Print("An error occurred while migrating the secret from AWS to AZ, the origin will not be deleted.")
+					} else {
+						fmt.Print("Successfully migrated secret from AWS to AZ")
+						DeleteAwsSecret(newpath, name)
+					}
 
-				fmt.Println("Migrating secret from AWS to AZ")
-				credentials := GetAzureConfig()
-				GetToken(&credentials)
-				// Write to AZ
-				WriteAzSecret(newpath, secret_struct{Name: name, Value: secretvalue}, &credentials)
-				DeleteAwsSecret(newpath, name)
-			case "AWS":
-				fmt.Println("Not possible to migrate from AWS to AWS")
-			default:
-			}
+					DeleteAwsSecret(newpath, name)
+				case "AWS":
+					fmt.Println("Not possible to migrate from AWS to AWS")
 
-		case "AZ":
-			destination := strings.ToUpper(os.Args[8])
-			newpath := SanitizePath(path)
-			switch destination {
+				case "GCP":
+					// write to GCP
+					fmt.Println("Migrating secret from AWS to GCP")
+					err := WriteGCPSecret(newpath, name, secretvalue)
+					if err != nil {
+						fmt.Print("An error occurred while migrating the secret from AWS to GCP, the origin will not be deleted.")
+					} else {
+						fmt.Print("Successfully migrated secret from AWS to GCP")
+						DeleteAwsSecret(newpath, name)
+					}
+
+				default:
+				}
 			case "AZ":
-				fmt.Println("Not possible to migrate from AZ to AZ")
-			case "AWS":
-
+				// copy from AZ to AWS
+				destination := strings.ToUpper(os.Args[8])
+				newpath := SanitizePath(path)
 				//read from AZ
 				credentials := GetAzureConfig()
 				GetToken(&credentials)
-				fmt.Println("Migrating secret from AZ to AWS")
 				value, err := ReadAzSecret(newpath, secret_struct{Name: name}, &credentials)
 				if err != "" {
 					fmt.Println(err)
 					return
 				}
 
-				// Write to AWS
-				WriteAWSSecret(newpath, name, value)
-				DeleteAzSecret(newpath, secret_struct{Name: name}, &credentials)
+				switch destination {
+				case "AZ":
+					fmt.Println("Not possible to migrate from AZ to AZ")
+				case "AWS":
+					// Write to AWS
+					fmt.Println("Migrating secret from AZ to AWS")
+					err := WriteAWSSecret(newpath, name, value)
+					if err != nil {
+						fmt.Print("An error occurred while migrating the secret from AZ to AWS, the origin will not be deleted.")
+					} else {
+						fmt.Print("Successfully migrated secret from AZ to AWS")
+						credentials := GetAzureConfig()
+						GetToken(&credentials)
+						DeleteAzSecret(newpath, secret_struct{Name: name}, &credentials)
+					}
+
+				case "GCP":
+					// write to GCP
+					fmt.Println("Migrating secret from AZ to GCP")
+					err := WriteGCPSecret(newpath, name, value)
+					if err != nil {
+						fmt.Print("An error occurred while migrating the secret from AZ to GCP, the origin will not be deleted.")
+					} else {
+						fmt.Print("Successfully migrated secret from AZ to GCP")
+						credentials := GetAzureConfig()
+						GetToken(&credentials)
+						DeleteAzSecret(newpath, secret_struct{Name: name}, &credentials)
+					}
+
+				default:
+
+				}
+			case "GCP":
+				// copy from GCP to AZ
+				destination := strings.ToUpper(os.Args[8])
+				newpath := SanitizePath(path)
+
+				// Read from GCP
+				value, err := ReadGCPSecret(newpath, name)
+				if err != nil {
+					fmt.Println("An error ocurred while reading the secret from GCP.")
+					return
+				}
+				switch destination {
+				case "AZ":
+					fmt.Println("Migrating secret from GCP to AZ")
+					credentials := GetAzureConfig()
+					GetToken(&credentials)
+					// Write to AZ
+					err := WriteAzSecret(newpath, secret_struct{Name: name, Value: value}, &credentials)
+					if err != nil {
+						fmt.Print("An error occurred while migrating the secret from GCP to AZ, the origin will not be deleted.")
+					} else {
+						fmt.Print("Successfully migrated secret from GCP to AZ")
+						DeleteGCPSecret(newpath, name)
+					}
+
+					DeleteAwsSecret(newpath, name)
+				case "AWS":
+					// Write to AWS
+					fmt.Println("Migrating secret from GCP to AWS")
+					err := WriteAWSSecret(newpath, name, value)
+					if err != nil {
+						fmt.Print("An error occurred while migrating the secret from GCP to AWS, the origin will not be deleted.")
+					} else {
+						fmt.Print("Successfully migrated secret from GCP to AWS")
+						DeleteGCPSecret(newpath, name)
+					}
+
+				case "GCP":
+					fmt.Println("Not possible to migrate from GCP to GCP")
+				default:
+				}
 			default:
-
+				fmt.Println("Usage: 'kvcli write/read/export/list' ")
 			}
-		default:
-
 		}
-	default:
-		fmt.Println("Usage: 'kvcli write/read/export/list' ")
 	}
-
 }

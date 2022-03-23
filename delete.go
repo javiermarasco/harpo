@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"os"
 
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/aws"
+	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 func DeleteAzSecret(path string, secret secret_struct, creds *auth) {
@@ -63,5 +65,23 @@ func DeleteAwsSecret(path string, secretname string) {
 	_, err = conn.DeleteSecret(context.TODO(), &deletesecret)
 	if err != nil {
 		fmt.Println("Error deleting secret.")
+	}
+}
+
+func DeleteGCPSecret(path string, secretname string) {
+	Parent := "projects/842557969287"
+	ctx := context.Background()
+	c, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	defer c.Close()
+	req := &secretmanagerpb.DeleteSecretRequest{
+		Name: Parent + "/secrets/" + secretname,
+	}
+
+	err = c.DeleteSecret(ctx, req)
+	if err != nil {
+		fmt.Println(err.Error())
 	}
 }

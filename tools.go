@@ -59,6 +59,7 @@ func PathToTags(path string) map[string]string {
 
 func SanitizePath(path string) string {
 	// First clear initial slash if exist
+	strings.Replace(path, "\\", "/", -1)
 	var newpath string = path
 	if path[0:1] == "/" {
 		runes := []rune(path)
@@ -80,6 +81,14 @@ func JsonPrint(i interface{}) string {
 
 func CreateHash(input string) string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(input)))
+}
+
+func PathToGCP(path string) string {
+	return strings.ToLower(strings.Replace(path, "/", "_", -1))
+}
+
+func PathFromGCP(path string) string {
+	return strings.Replace(path, "_", "/", -1)
 }
 
 func DisplayHelpUsage() {

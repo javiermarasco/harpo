@@ -11,13 +11,10 @@
             "mode": "debug",
             "program": "${fileDirname}",
             //"args": ["aws", "copy", "-path", "/infra/dev/servers/internal/sql/primary", "-name", "sqlconnectionstring2", "-destination", "az" ],
-            "args": ["az", "list", "-path", "/infra"],
+            "args": ["gcp", "delete", "-path", "/infra/dev/server", "-name" , "mynewsecret4"],
             "env": {
-                "AWS_REGION": "eu-central-1",
-                "AZ_kvname": "goclikeyvault",
-                "AZ_clientid": "d74aa073-cfda-4e0a-bf45-f03a1ae082cb",
-                "AZ_clientsecret": "Cyx7Q~NH0Mh8aquM.PsINXPOFWDcpSA3HB5a0",
-                "AZ_tenantid": "eaf2733b-9db9-4ce4-aa41-0e902bf3e5f9"
+                //"AWS_REGION": "eu-central-1",
+                "GOOGLE_APPLICATION_CREDENTIALS" : "C:\\Users\\javier\\Downloads\\harpo-344717-13d0ee89f8b2.json"
               }
         }
 

@@ -7,10 +7,14 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
+	"google.golang.org/api/iterator"
+	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 func GetAzSecrets(creds *auth) secret_list {
@@ -72,4 +76,46 @@ func GetAwsSecrets(path string) ([]types.SecretListEntry, error) {
 	}
 
 	return result.SecretList, nil
+}
+
+func GetGcpSecrets(path string) {
+
+	ctx := context.Background()
+	c, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	defer c.Close()
+
+	req := &secretmanagerpb.ListSecretsRequest{
+		Parent: "projects/842557969287",
+	}
+	it := c.ListSecrets(ctx, req)
+
+	for {
+		resp, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			fmt.Println("An error ocurred while retrieving the secret from GCP.")
+		}
+
+		pathslice := strings.Split(path, "/")
+		respsecretpathslice := strings.Split(strings.Replace(resp.Labels["path"], "_", "/", -1), "/")
+
+		pathmath := false
+		if len(pathslice) <= len(respsecretpathslice) {
+			for i, _ := range pathslice {
+				if pathslice[i] == respsecretpathslice[i] {
+					pathmath = true
+				} else {
+					pathmath = false
+				}
+			}
+		}
+		if pathmath == true {
+			fmt.Println("The path for the secret is: ", strings.Replace(resp.Labels["path"], "_", "/", -1)+"/"+resp.Labels["secretname"])
+		}
+	}
 }

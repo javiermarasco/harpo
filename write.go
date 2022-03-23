@@ -8,14 +8,17 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
+	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
-func WriteAzSecret(path string, secret secret_struct, creds *auth) {
+func WriteAzSecret(path string, secret secret_struct, creds *auth) error {
 	base_uri := fmt.Sprint("https://", creds.KeyVault, ".vault.azure.net")
 	inputForHash := path + "+" + secret.Name
 	secretName := CreateHash(inputForHash)
@@ -43,12 +46,12 @@ func WriteAzSecret(path string, secret secret_struct, creds *auth) {
 	req.Header.Add("Authorization", fmt.Sprint("bearer ", creds.Token))
 	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	defer resp.Body.Close()
@@ -64,18 +67,19 @@ func WriteAzSecret(path string, secret secret_struct, creds *auth) {
 		}
 	} else {
 		fmt.Println("Get failed with error: ", resp)
+		return err
 	}
-
+	return nil
 }
 
-func WriteAWSSecret(path string, secretname string, secretvalue string) {
+func WriteAWSSecret(path string, secretname string, secretvalue string) error {
 	region := os.Getenv("AWS_REGION")
 	inputForHash := path + "+" + secretname
 	secretNameHashed := CreateHash(inputForHash)
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 
 	conn := secretsmanager.NewFromConfig(cfg, func(o *secretsmanager.Options) {
@@ -95,6 +99,62 @@ func WriteAWSSecret(path string, secretname string, secretvalue string) {
 	}
 	_, err = conn.CreateSecret(context.TODO(), &input)
 	if err != nil {
-		fmt.Println("Error writing secret.")
+		return err
 	}
+	return nil
+}
+
+func WriteGCPSecret(path string, secretname string, secretvalue string) error {
+	parent := "projects/842557969287"
+	payload := []byte(secretvalue)
+
+	// Create the client.
+	ctx := context.Background()
+	client, errclient := secretmanager.NewClient(ctx)
+	if errclient != nil {
+		return fmt.Errorf("failed to create secretmanager client: %v", errclient)
+	}
+	defer client.Close()
+
+	gcplabels := map[string]string{
+		"secretname": strings.ToLower(secretname),
+		"path":       PathToGCP(path),
+	}
+
+	// Build the request.
+	req := &secretmanagerpb.CreateSecretRequest{
+		Parent:   parent,
+		SecretId: secretname,
+		Secret: &secretmanagerpb.Secret{
+			Replication: &secretmanagerpb.Replication{
+				Replication: &secretmanagerpb.Replication_Automatic_{
+					Automatic: &secretmanagerpb.Replication_Automatic{},
+				},
+			},
+			Labels: gcplabels,
+		},
+	}
+
+	// Call the API.
+	_, errcreate := client.CreateSecret(ctx, req)
+	if errcreate != nil {
+		return fmt.Errorf("failed to create secret: %v", errcreate)
+	}
+
+	// Build the request.
+	reqver := &secretmanagerpb.AddSecretVersionRequest{
+		Parent: parent + "/secrets/" + strings.ToLower(secretname),
+		Payload: &secretmanagerpb.SecretPayload{
+			Data: payload,
+		},
+	}
+
+	// Call the API.
+	resultver, errver := client.AddSecretVersion(ctx, reqver)
+	if errver != nil {
+		return fmt.Errorf("failed to add secret version: %v", errver)
+	}
+
+	fmt.Println("Created secret: ", resultver.Name)
+	return nil
 }
