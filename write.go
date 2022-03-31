@@ -97,6 +97,7 @@ func WriteAWSSecret(path string, secretname string, secretvalue string) error {
 		SecretString: aws.String(secretvalue),
 		Tags:         tags,
 	}
+
 	_, err = conn.CreateSecret(context.TODO(), &input)
 	if err != nil {
 		return err
