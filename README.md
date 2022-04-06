@@ -16,7 +16,7 @@ go build
 That will create a file called `harpo.exe` in Windows and `harpo` in Linux
 # How to use
 
-The sintaxis of the commands is the same for all cloud providers, just keep in mind the order of the parameters is important (currently is not possible to exchange the order of the parameters.)
+The syntax of the commands is the same for all cloud providers, just keep in mind the order of the parameters is important (currently is not possible to exchange the order of the parameters.)
 ## Environment variables setup
 
 You need to define some environment variables in order to use `harpo`, those depend on the cloud provider and you can have more than one cloud provider setup at the same time (specially if you want to copy or migrate from one cloud to another this is mandatory). Once your have this variables defined you can start using the CLI.
