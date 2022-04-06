@@ -35,6 +35,7 @@ You need to define some environment variables in order to use `harpo`, those dep
 
 ### GCP
 - "GOOGLE_APPLICATION_CREDENTIALS" (Contains the path to the json file with the credentials for your google cloud account)
+- "GCP_parent" (Contains the reference to the parent of the secrets in the format 'projects/parentid')
 
 For AWS the following permissions are needed:
 secretsmanager:Name
