@@ -17,9 +17,9 @@ import (
 func DeleteAzSecret(path string, secret secret_struct, creds *auth) {
 	base_uri := fmt.Sprint("https://", creds.KeyVault, ".vault.azure.net")
 	inputForHash := path + "+" + secret.Name
-	secretName := CreateHash(inputForHash)
+	secretNameHashed := CreateHash(inputForHash)
 
-	uri := fmt.Sprint(base_uri, "/secrets/", secretName, "?api-version=7.2")
+	uri := fmt.Sprint(base_uri, "/secrets/", secretNameHashed, "?api-version=7.2")
 
 	// DELETE
 	req, err := http.NewRequest("DELETE", uri, nil)
@@ -69,7 +69,15 @@ func DeleteAwsSecret(path string, secretname string) {
 }
 
 func DeleteGCPSecret(path string, secretname string) {
-	Parent := "projects/842557969287"
+
+	// Try to get the parent id for GCP
+	gcp_parent := os.Getenv("GCP_parent")
+	if gcp_parent == "" {
+		fmt.Println(" Environment variable GCP_parent needs to be defined with format 'projects/parentid'.")
+		os.Exit(1)
+	}
+
+	//Parent := "projects/842557969287"
 	ctx := context.Background()
 	c, err := secretmanager.NewClient(ctx)
 	if err != nil {
@@ -77,7 +85,7 @@ func DeleteGCPSecret(path string, secretname string) {
 	}
 	defer c.Close()
 	req := &secretmanagerpb.DeleteSecretRequest{
-		Name: Parent + "/secrets/" + secretname,
+		Name: gcp_parent + "/secrets/" + secretname,
 	}
 
 	err = c.DeleteSecret(ctx, req)

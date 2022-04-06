@@ -21,9 +21,9 @@ import (
 func WriteAzSecret(path string, secret secret_struct, creds *auth) error {
 	base_uri := fmt.Sprint("https://", creds.KeyVault, ".vault.azure.net")
 	inputForHash := path + "+" + secret.Name
-	secretName := CreateHash(inputForHash)
+	secretNameHashed := CreateHash(inputForHash)
 
-	uri := fmt.Sprint(base_uri, "/secrets/", secretName, "?api-version=7.2")
+	uri := fmt.Sprint(base_uri, "/secrets/", secretNameHashed, "?api-version=7.2")
 
 	var newtags = make(map[string]string)
 	newtags = PathToTags(path)
@@ -106,8 +106,16 @@ func WriteAWSSecret(path string, secretname string, secretvalue string) error {
 }
 
 func WriteGCPSecret(path string, secretname string, secretvalue string) error {
-	parent := "projects/842557969287"
+	// Try to get the parent id for GCP
+	gcp_parent := os.Getenv("GCP_parent")
+	if gcp_parent == "" {
+		fmt.Println(" Environment variable GCP_parent needs to be defined with format 'projects/parentid'.")
+		os.Exit(1)
+	}
+	//parent := "projects/842557969287"
 	payload := []byte(secretvalue)
+	inputForHash := path + "+" + secretname
+	secretNameHashed := CreateHash(inputForHash)
 
 	// Create the client.
 	ctx := context.Background()
@@ -124,8 +132,8 @@ func WriteGCPSecret(path string, secretname string, secretvalue string) error {
 
 	// Build the request.
 	req := &secretmanagerpb.CreateSecretRequest{
-		Parent:   parent,
-		SecretId: secretname,
+		Parent:   gcp_parent,
+		SecretId: secretNameHashed,
 		Secret: &secretmanagerpb.Secret{
 			Replication: &secretmanagerpb.Replication{
 				Replication: &secretmanagerpb.Replication_Automatic_{
@@ -144,7 +152,7 @@ func WriteGCPSecret(path string, secretname string, secretvalue string) error {
 
 	// Build the request.
 	reqver := &secretmanagerpb.AddSecretVersionRequest{
-		Parent: parent + "/secrets/" + strings.ToLower(secretname),
+		Parent: gcp_parent + "/secrets/" + secretNameHashed,
 		Payload: &secretmanagerpb.SecretPayload{
 			Data: payload,
 		},
@@ -156,6 +164,6 @@ func WriteGCPSecret(path string, secretname string, secretvalue string) error {
 		return fmt.Errorf("failed to add secret version: %v", errver)
 	}
 
-	fmt.Println("Created secret: ", resultver.Name)
+	fmt.Println("Secret created: ", resultver.Name)
 	return nil
 }

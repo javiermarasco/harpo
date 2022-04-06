@@ -80,6 +80,13 @@ func GetAwsSecrets(path string) ([]types.SecretListEntry, error) {
 
 func GetGcpSecrets(path string) {
 
+	// Try to get the parent id for GCP
+	gcp_parent := os.Getenv("GCP_parent")
+	if gcp_parent == "" {
+		fmt.Println(" Environment variable GCP_parent needs to be defined with format 'projects/parentid'.")
+		os.Exit(1)
+	}
+
 	ctx := context.Background()
 	c, err := secretmanager.NewClient(ctx)
 	if err != nil {
@@ -88,7 +95,8 @@ func GetGcpSecrets(path string) {
 	defer c.Close()
 
 	req := &secretmanagerpb.ListSecretsRequest{
-		Parent: "projects/842557969287",
+		//Parent: "projects/842557969287",
+		Parent: gcp_parent,
 	}
 	it := c.ListSecrets(ctx, req)
 

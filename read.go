@@ -17,9 +17,9 @@ import (
 )
 
 func ReadAzSecret(path string, secret_name secret_struct, creds *auth) (value string, error string) {
-	secretname := CreateHash(path + "+" + secret_name.Name)
+	secretNameHashed := CreateHash(path + "+" + secret_name.Name)
 	base_uri := fmt.Sprint("https://", creds.KeyVault, ".vault.azure.net")
-	uri := fmt.Sprint(base_uri, "/secrets/", secretname, "?api-version=7.2")
+	uri := fmt.Sprint(base_uri, "/secrets/", secretNameHashed, "?api-version=7.2")
 	value = ""
 	error = ""
 	req, _ := http.NewRequest("GET", uri, nil)
@@ -74,7 +74,15 @@ func ReadAWSSecret(path string, secretname string) (string, error) {
 }
 
 func ReadGCPSecret(path string, secretname string) (string, error) {
-	parent := "projects/842557969287"
+	// Try to get the parent id for GCP
+	gcp_parent := os.Getenv("GCP_parent")
+	if gcp_parent == "" {
+		fmt.Println(" Environment variable GCP_parent needs to be defined with format 'projects/parentid'.")
+		os.Exit(1)
+	}
+	//parent := "projects/842557969287"
+	inputForHash := path + "+" + secretname
+	secretNameHashed := CreateHash(inputForHash)
 	// Create the client.
 	ctx := context.Background()
 	client, errclient := secretmanager.NewClient(ctx)
@@ -84,7 +92,7 @@ func ReadGCPSecret(path string, secretname string) (string, error) {
 	defer client.Close()
 
 	req := &secretmanagerpb.AccessSecretVersionRequest{
-		Name: parent + "/secrets/" + strings.ToLower(secretname) + "/versions/latest",
+		Name: gcp_parent + "/secrets/" + strings.ToLower(secretNameHashed) + "/versions/latest",
 	}
 
 	secret, errget := client.AccessSecretVersion(ctx, req)

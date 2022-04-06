@@ -24,7 +24,7 @@ func TagsToPath(Tags map[string]string, Path string) string {
 
 			// Check the positional tags in inputTags matches the ones in the just created path
 			// and toggle the returnValue switch based on match
-			if len(inputTags) >= len(returnPathSlice) {
+			if len(inputTags) > len(returnPathSlice) {
 				returnValue = false
 			} else {
 				for index, _ := range inputTags {
@@ -92,7 +92,26 @@ func PathFromGCP(path string) string {
 }
 
 func DisplayHelpUsage() {
-	// This function should display a help message explaining how to use the cli
+	fmt.Println("Harpo - a tool to manage secrets in Azure, AWS and GCP")
+	fmt.Println()
+	fmt.Println("Usage: harpo [az|aws|gcp] [action] [options]")
+	fmt.Println()
+	fmt.Println()
+	fmt.Println("az:  Actions to interact with Azure Keyvault")
+	fmt.Println("aws: Actions to interact with AWS Secrets Manager")
+	fmt.Println("gcp: Actions to interact with GCP Secret Manager")
+	fmt.Println()
+	fmt.Println("actions:")
+	fmt.Println()
+	fmt.Println("List:     Will present all the secrets in a path defined by '-path'")
+	fmt.Println("Write:    Will write a secret in '-path' with name '-name' with the value '-value'")
+	fmt.Println("          Write will fail if the secret already exists, to update the secret use action 'Update'")
+	fmt.Println("Read:     Will read the value of a secret in '-path' with name '-name'")
+	fmt.Println("Update:   Will update a secret in path '-path' that has a name '-name' with the value defined in '-updatedvalue'")
+	fmt.Println("Delete:   Will delete a secret in path '-path' with name '-name'")
+	fmt.Println("Copy:     Will copy a secret from path '-path' with name '-name' from the cloud defined in the action [az|aws|gcp] to the cloud defined in '-destination'")
+	fmt.Println("Migrate:  Will migrate the secret from the path '-path' with name '-name' to cloud defined in '-destination'.")
+	fmt.Println("          After copy the secret, it will be deleted from the origin cloud provider")
+	fmt.Println()
 
-	fmt.Println("Implement help usage message!")
 }

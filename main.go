@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -9,48 +10,66 @@ import (
 )
 
 func main() {
-	flags := os.Args
-	if len(flags) < 2 {
-		fmt.Println("Usage: 'kvcli write/read' ")
-		return
-	}
-	provider := os.Args[1]
-	if provider != "az" && provider != "aws" && provider != "gcp" {
-		fmt.Println("Provider should be 'az', 'aws' or 'gcp'")
-		return
-	}
-	provider = strings.ToUpper(provider)
-	operation := os.Args[2]
-	operation = strings.ToUpper(operation)
 
+	// Define all the flag sets for the commands
+	azCmd := flag.NewFlagSet("az", flag.ExitOnError)
+	azPath := azCmd.String("path", " ", "This is the path for the secret")
+	azName := azCmd.String("name", " ", "This is the name for the secret")
+	azValue := azCmd.String("value", " ", "This is the value for the secret")
+	azNewValue := azCmd.String("newvalue", " ", "This is the new value for the secret")
+	azDestination := azCmd.String("destination", " ", "This is the destination cloud provider for copy and migrate a secret")
 
-	path := os.Args[4]
-	var name string
-	var value string
-	if len(os.Args) >= 6 {
-		name = os.Args[6]
-	}
-	if len(os.Args) >= 9 {
-		value = os.Args[8]
+	awsCmd := flag.NewFlagSet("aws", flag.ExitOnError)
+	awsPath := awsCmd.String("path", " ", "This is the path for the secret")
+	awsName := awsCmd.String("name", " ", "This is the name for the secret")
+	awsValue := awsCmd.String("value", " ", "This is the value for the secret")
+	awsNewValue := awsCmd.String("newvalue", " ", "This is the new value for the secret")
+	awsDestination := awsCmd.String("destination", " ", "This is the destination cloud provider for copy and migrate a secret")
+
+	gcpCmd := flag.NewFlagSet("gcp", flag.ExitOnError)
+	gcpPath := gcpCmd.String("path", " ", "This is the path for the secret")
+	gcpName := gcpCmd.String("name", " ", "This is the name for the secret")
+	gcpValue := gcpCmd.String("value", " ", "This is the value for the secret")
+	gcpNewValue := gcpCmd.String("newvalue", " ", "This is the new value for the secret")
+	gcpDestination := gcpCmd.String("destination", " ", "This is the destination cloud provider for copy and migrate a secret")
+
+	// Verify at least 2 arguments are provided
+	if len(os.Args) < 2 {
+		DisplayHelpUsage()
+		os.Exit(1)
 	}
 
+	// Verify the provided provider is valid (either az, aws or gcp)
+	provider := strings.ToUpper(os.Args[1])
+	if provider != "AZ" && provider != "AWS" && provider != "GCP" {
+		fmt.Println("expected 'az','aws' or 'gcp'.")
+		DisplayHelpUsage()
+		os.Exit(1)
+	}
+
+	// Verify the provided operation is valid
+	operation := strings.ToUpper(os.Args[2])
+	if operation != "WRITE" && operation != "READ" && operation != "EXPORT" && operation != "LIST" && operation != "DELETE" && operation != "COPY" && operation != "MIGRATE" && operation != "UPDATE" {
+		fmt.Println("Wrong operation.")
+		DisplayHelpUsage()
+		os.Exit(1)
+	}
 	switch operation {
 	case "WRITE":
 		switch provider {
 		case "AZ":
-			if len(os.Args) < 8 {
-				fmt.Println("A path, name and value needs to be provided.")
-				fmt.Println("Example: secretscli.exe (provider) write -path /infra/dev -name portnumber -value 8080 ")
-				return
+			azCmd.Parse(os.Args[3:])
+			if *azPath == " " || *azName == " " || *azValue == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
 			}
 			credentials := GetAzureConfig()
-			newpath := SanitizePath(path)
+			newpath := SanitizePath(*azPath)
 			GetToken(&credentials)
-
 			var secret secret_struct
-			secret.Name = name
-			secret.Value = value
-
+			secret.Name = *azName
+			secret.Value = *azValue
 			_, error := ReadAzSecret(newpath, secret, &credentials)
 			if error != "" {
 				WriteAzSecret(newpath, secret, &credentials)
@@ -59,53 +78,66 @@ func main() {
 			}
 
 		case "AWS":
-			newpath := SanitizePath(path)
-
-			_, error := ReadAWSSecret(newpath, name)
+			awsCmd.Parse(os.Args[3:])
+			if *awsPath == " " || *awsName == " " || *awsValue == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			newpath := SanitizePath(*awsPath)
+			_, error := ReadAWSSecret(newpath, *awsName)
 			if error != nil {
-				WriteAWSSecret(newpath, name, value)
+				WriteAWSSecret(newpath, *awsName, *awsValue)
 			} else {
 				fmt.Println("The specified secret already exist. Update it instead of Write.")
 			}
 
 		case "GCP":
-			newpath := SanitizePath(path)
-
-			_, error := ReadGCPSecret(newpath, name)
+			gcpCmd.Parse(os.Args[3:])
+			if *gcpPath == " " || *gcpName == " " || *gcpValue == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			newpath := SanitizePath(*gcpPath)
+			_, error := ReadGCPSecret(newpath, *gcpName)
 			if error != nil {
-				WriteGCPSecret(newpath, name, value)
+				WriteGCPSecret(newpath, *gcpName, *gcpValue)
 			} else {
 				fmt.Println("The specified secret already exist. Update it instead of Write.")
 			}
 
 		default:
 		}
-
 	case "READ":
 		switch provider {
 		case "AZ":
-			if len(os.Args) < 6 {
-				fmt.Println("A path and name needs to be provided.")
-				fmt.Println("Example: secretscli.exe (provider) read -path /infra/dev -name portnumber ")
-				return
+			azCmd.Parse(os.Args[3:])
+			if *azPath == " " || *azName == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
 			}
 			credentials := GetAzureConfig()
-			newpath := SanitizePath(path)
+			newpath := SanitizePath(*azPath)
 			GetToken(&credentials)
-
 			var secret secret_struct
-			secret.Name = name
-
+			secret.Name = *azName
 			value, err := ReadAzSecret(newpath, secret, &credentials)
 			if err != "" {
 				fmt.Println(err)
 				return
 			}
 			fmt.Println("The value of the secret is: ", value)
-
 		case "AWS":
-			newpath := SanitizePath(path)
-			value, err := ReadAWSSecret(newpath, name)
+			awsCmd.Parse(os.Args[3:])
+			if *awsPath == " " || *awsName == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			newpath := SanitizePath(*awsPath)
+			value, err := ReadAWSSecret(newpath, *awsName)
 			if err != nil {
 				fmt.Println("An error ocurred while reading the secret from AWS.")
 				return
@@ -113,8 +145,14 @@ func main() {
 			fmt.Println("The value of the secret is: ", value)
 
 		case "GCP":
-			newpath := SanitizePath(path)
-			value, err := ReadGCPSecret(newpath, name)
+			gcpCmd.Parse(os.Args[3:])
+			if *gcpPath == " " || *gcpName == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			newpath := SanitizePath(*gcpPath)
+			value, err := ReadGCPSecret(newpath, *gcpName)
 			if err != nil {
 				fmt.Println("An error ocurred while reading the secret from GCP.")
 				return
@@ -123,23 +161,20 @@ func main() {
 		default:
 
 		}
-
 	case "EXPORT":
 		switch provider {
 		case "AZ":
-			if len(os.Args) < 6 {
-				fmt.Println("A path and name needs to be provided.")
-				fmt.Println("Example: secretscli.exe (provider) export -path /infra/dev -name portnumber ")
-				return
+			azCmd.Parse(os.Args[3:])
+			if *azPath == " " || *azName == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
 			}
 			credentials := GetAzureConfig()
-			// name =>  KV_<secretname>
-			newpath := SanitizePath(path)
+			newpath := SanitizePath(*azPath)
 			GetToken(&credentials)
-
 			var secret secret_struct
-			secret.Name = name
-
+			secret.Name = *azName
 			value, err := ReadAzSecret(newpath, secret, &credentials)
 			if err != "" {
 				fmt.Println(err)
@@ -147,16 +182,28 @@ func main() {
 			}
 			fmt.Println(value)
 		case "AWS":
-			newpath := SanitizePath(path)
-			value, err := ReadAWSSecret(newpath, name)
+			awsCmd.Parse(os.Args[3:])
+			if *awsPath == " " || *awsName == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			newpath := SanitizePath(*awsPath)
+			value, err := ReadAWSSecret(newpath, *awsName)
 			if err != nil {
 				fmt.Println("An error ocurred while reading the secret from AWS.")
 				return
 			}
 			fmt.Println(value)
 		case "GCP":
-			newpath := SanitizePath(path)
-			value, err := ReadGCPSecret(newpath, name)
+			gcpCmd.Parse(os.Args[3:])
+			if *gcpPath == " " || *gcpName == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			newpath := SanitizePath(*gcpPath)
+			value, err := ReadGCPSecret(newpath, *gcpName)
 			if err != nil {
 				fmt.Println("An error ocurred while reading the secret from GCP.")
 				return
@@ -164,19 +211,17 @@ func main() {
 			fmt.Println(value)
 		default:
 		}
-
 	case "LIST":
-
 		switch provider {
-
 		case "AZ":
-			if len(os.Args) < 4 {
-				fmt.Println("A path needs to be provided.")
-				fmt.Println("Example: secretscli.exe (provider) list -path /infra/dev ")
-				return
+			azCmd.Parse(os.Args[3:])
+			if *azPath == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
 			}
 			credentials := GetAzureConfig()
-			newpath := SanitizePath(path)
+			newpath := SanitizePath(*azPath)
 			GetToken(&credentials)
 
 			listOfSecrets := GetAzSecrets(&credentials)
@@ -188,8 +233,13 @@ func main() {
 
 			}
 		case "AWS":
-			newpath := SanitizePath(path)
-
+			awsCmd.Parse(os.Args[3:])
+			if *awsPath == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			newpath := SanitizePath(*awsPath)
 			secrets, err := GetAwsSecrets(newpath)
 			if err != nil {
 				fmt.Println("An error ocurred while retrieving the secret from AWS.")
@@ -213,36 +263,67 @@ func main() {
 				fmt.Println("The path for the secret is: ", secretpath+"/"+secretname)
 			}
 		case "GCP":
-			newpath := SanitizePath(path)
+			gcpCmd.Parse(os.Args[3:])
+			if *gcpPath == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			newpath := SanitizePath(*gcpPath)
 			GetGcpSecrets(newpath)
 
 		default:
 		}
-
 	case "DELETE":
 		switch provider {
 		case "AZ":
-			newpath := SanitizePath(path)
+			azCmd.Parse(os.Args[3:])
+			if *azPath == " " || *azName == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			newpath := SanitizePath(*azPath)
 			credentials := GetAzureConfig()
 			GetToken(&credentials)
 			fmt.Println("Deleteing secret from Azure Key Vault")
-			DeleteAzSecret(newpath, secret_struct{Name: name}, &credentials)
+			DeleteAzSecret(newpath, secret_struct{Name: *azName}, &credentials)
 		case "AWS":
-			newpath := SanitizePath(path)
+			awsCmd.Parse(os.Args[3:])
+			if *awsPath == " " || *awsName == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			newpath := SanitizePath(*awsPath)
 			fmt.Println("Deleteing secret from AWS secrets manager")
-			DeleteAwsSecret(newpath, name)
+			DeleteAwsSecret(newpath, *awsName)
 		case "GCP":
+			gcpCmd.Parse(os.Args[3:])
+			if *gcpPath == " " || *gcpName == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			newpath := SanitizePath(*gcpPath)
 			fmt.Println("Deleteing secret from GCP secret manager")
-			newpath := SanitizePath(path)
-			DeleteGCPSecret(newpath, name)
+			DeleteGCPSecret(newpath, *gcpName)
+		default:
 		}
 	case "COPY":
 		switch provider {
 		case "AWS":
-			destination := strings.ToUpper(os.Args[8])
-			newpath := SanitizePath(path)
+			awsCmd.Parse(os.Args[3:])
+			if *awsPath == " " || *awsName == " " || *awsDestination == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			newpath := SanitizePath(*awsPath)
+			destination := strings.ToUpper(*awsDestination)
+
 			//Read from AWS
-			secretvalue, err := ReadAWSSecret(newpath, name)
+			secretvalue, err := ReadAWSSecret(newpath, *awsName)
 			if err != nil {
 				fmt.Println("An error found while reading the AWS secret")
 			}
@@ -252,24 +333,30 @@ func main() {
 				credentials := GetAzureConfig()
 				GetToken(&credentials)
 				// Write to AZ
-				WriteAzSecret(newpath, secret_struct{Name: name, Value: secretvalue}, &credentials)
+				WriteAzSecret(newpath, secret_struct{Name: *awsName, Value: secretvalue}, &credentials)
 			case "AWS":
 				fmt.Println("Not possible to copy from AWS to AWS")
 
 			case "GCP":
 				// write to GCP
 				fmt.Println("Copying secret from AWS to GCP")
-				WriteGCPSecret(newpath, name, secretvalue)
+				WriteGCPSecret(newpath, *awsName, secretvalue)
 			default:
 			}
 		case "AZ":
 			// copy from AZ to AWS
-			destination := strings.ToUpper(os.Args[8])
-			newpath := SanitizePath(path)
+			azCmd.Parse(os.Args[3:])
+			if *azPath == " " || *azName == " " || *azDestination == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			destination := strings.ToUpper(*azDestination)
+			newpath := SanitizePath(*azPath)
 			//read from AZ
 			credentials := GetAzureConfig()
 			GetToken(&credentials)
-			value, err := ReadAzSecret(newpath, secret_struct{Name: name}, &credentials)
+			value, err := ReadAzSecret(newpath, secret_struct{Name: *azName}, &credentials)
 			if err != "" {
 				fmt.Println(err)
 				return
@@ -281,22 +368,27 @@ func main() {
 			case "AWS":
 				// Write to AWS
 				fmt.Println("Copying secret from AZ to AWS")
-				WriteAWSSecret(newpath, name, value)
+				WriteAWSSecret(newpath, *azName, value)
 			case "GCP":
 				// write to GCP
 				fmt.Println("Copying secret from AZ to GCP")
-				WriteGCPSecret(newpath, name, value)
+				WriteGCPSecret(newpath, *azName, value)
 
 			default:
-
 			}
 		case "GCP":
 			// copy from GCP to AZ
-			destination := strings.ToUpper(os.Args[8])
-			newpath := SanitizePath(path)
+			gcpCmd.Parse(os.Args[3:])
+			if *gcpPath == " " || *gcpName == " " || *gcpDestination == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			destination := strings.ToUpper(*gcpDestination)
+			newpath := SanitizePath(*gcpPath)
 
 			// Read from GCP
-			value, err := ReadGCPSecret(newpath, name)
+			value, err := ReadGCPSecret(newpath, *gcpName)
 			if err != nil {
 				fmt.Println("An error ocurred while reading the secret from GCP.")
 				return
@@ -308,11 +400,11 @@ func main() {
 				credentials := GetAzureConfig()
 				GetToken(&credentials)
 				// Write to AZ
-				WriteAzSecret(newpath, secret_struct{Name: name, Value: value}, &credentials)
+				WriteAzSecret(newpath, secret_struct{Name: *gcpName, Value: value}, &credentials)
 			case "AWS":
 				// Write in AWS
 				fmt.Println("Copying secret from GCP to AWS")
-				WriteAWSSecret(newpath, name, value)
+				WriteAWSSecret(newpath, *gcpName, value)
 
 			case "GCP":
 				fmt.Println("Not possible to copy from GCP to GCP")
@@ -323,10 +415,16 @@ func main() {
 	case "MIGRATE":
 		switch provider {
 		case "AWS":
-			destination := strings.ToUpper(os.Args[8])
-			newpath := SanitizePath(path)
+			awsCmd.Parse(os.Args[3:])
+			if *awsPath == " " || *awsName == " " || *awsDestination == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			destination := strings.ToUpper(*awsDestination)
+			newpath := SanitizePath(*awsPath)
 			//Read from AWS
-			secretvalue, err := ReadAWSSecret(newpath, name)
+			secretvalue, err := ReadAWSSecret(newpath, *awsName)
 			if err != nil {
 				fmt.Println("An error found while reading the AWS secret")
 			}
@@ -336,39 +434,46 @@ func main() {
 				credentials := GetAzureConfig()
 				GetToken(&credentials)
 				// Write to AZ
-				err := WriteAzSecret(newpath, secret_struct{Name: name, Value: secretvalue}, &credentials)
+				err := WriteAzSecret(newpath, secret_struct{Name: *awsName, Value: secretvalue}, &credentials)
 				if err != nil {
 					fmt.Print("An error occurred while migrating the secret from AWS to AZ, the origin will not be deleted.")
 				} else {
 					fmt.Print("Successfully migrated secret from AWS to AZ")
-					DeleteAwsSecret(newpath, name)
+					DeleteAwsSecret(newpath, *awsName)
 				}
 
-				DeleteAwsSecret(newpath, name)
+				DeleteAwsSecret(newpath, *awsName)
 			case "AWS":
 				fmt.Println("Not possible to migrate from AWS to AWS")
 
 			case "GCP":
 				// write to GCP
+				gcpCmd.Parse(os.Args[3:])
 				fmt.Println("Migrating secret from AWS to GCP")
-				err := WriteGCPSecret(newpath, name, secretvalue)
+				err := WriteGCPSecret(newpath, *gcpName, secretvalue)
 				if err != nil {
 					fmt.Print("An error occurred while migrating the secret from AWS to GCP, the origin will not be deleted.")
 				} else {
 					fmt.Print("Successfully migrated secret from AWS to GCP")
-					DeleteAwsSecret(newpath, name)
+					DeleteAwsSecret(newpath, *gcpName)
 				}
 
 			default:
 			}
 		case "AZ":
 			// copy from AZ to AWS
-			destination := strings.ToUpper(os.Args[8])
-			newpath := SanitizePath(path)
+			azCmd.Parse(os.Args[3:])
+			if *azPath == " " || *azName == " " || *azDestination == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			destination := strings.ToUpper(*azDestination)
+			newpath := SanitizePath(*azPath)
 			//read from AZ
 			credentials := GetAzureConfig()
 			GetToken(&credentials)
-			value, err := ReadAzSecret(newpath, secret_struct{Name: name}, &credentials)
+			value, err := ReadAzSecret(newpath, secret_struct{Name: *azName}, &credentials)
 			if err != "" {
 				fmt.Println(err)
 				return
@@ -380,39 +485,44 @@ func main() {
 			case "AWS":
 				// Write to AWS
 				fmt.Println("Migrating secret from AZ to AWS")
-				err := WriteAWSSecret(newpath, name, value)
+				err := WriteAWSSecret(newpath, *azName, value)
 				if err != nil {
 					fmt.Print("An error occurred while migrating the secret from AZ to AWS, the origin will not be deleted.")
 				} else {
 					fmt.Print("Successfully migrated secret from AZ to AWS")
 					credentials := GetAzureConfig()
 					GetToken(&credentials)
-					DeleteAzSecret(newpath, secret_struct{Name: name}, &credentials)
+					DeleteAzSecret(newpath, secret_struct{Name: *azName}, &credentials)
 				}
 
 			case "GCP":
 				// write to GCP
 				fmt.Println("Migrating secret from AZ to GCP")
-				err := WriteGCPSecret(newpath, name, value)
+				err := WriteGCPSecret(newpath, *azName, value)
 				if err != nil {
 					fmt.Print("An error occurred while migrating the secret from AZ to GCP, the origin will not be deleted.")
 				} else {
 					fmt.Print("Successfully migrated secret from AZ to GCP")
 					credentials := GetAzureConfig()
 					GetToken(&credentials)
-					DeleteAzSecret(newpath, secret_struct{Name: name}, &credentials)
+					DeleteAzSecret(newpath, secret_struct{Name: *azName}, &credentials)
 				}
 
 			default:
-
 			}
 		case "GCP":
 			// copy from GCP to AZ
-			destination := strings.ToUpper(os.Args[8])
-			newpath := SanitizePath(path)
+			gcpCmd.Parse(os.Args[3:])
+			if *gcpPath == " " || *gcpName == " " || *gcpDestination == " " {
+				fmt.Println("Missing path,name or value")
+				DisplayHelpUsage()
+				os.Exit(1)
+			}
+			destination := strings.ToUpper(*gcpDestination)
+			newpath := SanitizePath(*gcpPath)
 
 			// Read from GCP
-			value, err := ReadGCPSecret(newpath, name)
+			value, err := ReadGCPSecret(newpath, *gcpName)
 			if err != nil {
 				fmt.Println("An error ocurred while reading the secret from GCP.")
 				return
@@ -423,24 +533,22 @@ func main() {
 				credentials := GetAzureConfig()
 				GetToken(&credentials)
 				// Write to AZ
-				err := WriteAzSecret(newpath, secret_struct{Name: name, Value: value}, &credentials)
+				err := WriteAzSecret(newpath, secret_struct{Name: *gcpName, Value: value}, &credentials)
 				if err != nil {
 					fmt.Print("An error occurred while migrating the secret from GCP to AZ, the origin will not be deleted.")
 				} else {
 					fmt.Print("Successfully migrated secret from GCP to AZ")
-					DeleteGCPSecret(newpath, name)
+					DeleteGCPSecret(newpath, *gcpName)
 				}
-
-				DeleteAwsSecret(newpath, name)
 			case "AWS":
 				// Write to AWS
 				fmt.Println("Migrating secret from GCP to AWS")
-				err := WriteAWSSecret(newpath, name, value)
+				err := WriteAWSSecret(newpath, *gcpName, value)
 				if err != nil {
 					fmt.Print("An error occurred while migrating the secret from GCP to AWS, the origin will not be deleted.")
 				} else {
 					fmt.Print("Successfully migrated secret from GCP to AWS")
-					DeleteGCPSecret(newpath, name)
+					DeleteGCPSecret(newpath, *gcpName)
 				}
 
 			case "GCP":
@@ -448,41 +556,54 @@ func main() {
 			default:
 			}
 		default:
-			fmt.Println("Usage: 'kvcli write/read/export/list' ")
 		}
-	
-	case "UPDATE": {
-		switch provider {
-		case "AZ":
-			if len(os.Args) < 8 {
-				fmt.Println("A path, name and value needs to be provided.")
-				fmt.Println("Example: secretscli.exe (provider) write -path /infra/dev -name portnumber -value 8080 ")
-				return
+	case "UPDATE":
+		{
+			switch provider {
+			case "AZ":
+				azCmd.Parse(os.Args[3:])
+				if *azPath == " " || *azName == " " || *azNewValue == " " {
+					fmt.Println("Missing path,name or value")
+					DisplayHelpUsage()
+					os.Exit(1)
+				}
+				credentials := GetAzureConfig()
+				newpath := SanitizePath(*azPath)
+				GetToken(&credentials)
+
+				var secret secret_struct
+				secret.Name = *azName
+				secret.Value = *azNewValue
+				WriteAzSecret(newpath, secret, &credentials)
+
+			case "AWS":
+				awsCmd.Parse(os.Args[3:])
+				if *awsPath == " " || *awsName == " " || *awsNewValue == " " {
+					fmt.Println("Missing path,name or value")
+					DisplayHelpUsage()
+					os.Exit(1)
+				}
+				newpath := SanitizePath(*awsPath)
+				UpdateAWSSecret(newpath, *awsName, *awsNewValue)
+
+			case "GCP":
+				gcpCmd.Parse(os.Args[3:])
+				if *gcpPath == " " || *gcpName == " " || *gcpNewValue == " " {
+					fmt.Println("Missing path,name or value")
+					DisplayHelpUsage()
+					os.Exit(1)
+				}
+				newpath := SanitizePath(*gcpPath)
+
+				_, error := ReadGCPSecret(newpath, *gcpName)
+				if error != nil {
+					UpdateGCPSecret(newpath, *gcpName, *gcpNewValue)
+				} else {
+					fmt.Println("The specified secret already exist. Update it instead of Write.")
+				}
+
+			default:
 			}
-			credentials := GetAzureConfig()
-			newpath := SanitizePath(path)
-			GetToken(&credentials)
-
-			var secret secret_struct
-			secret.Name = name
-			secret.Value = updatenewvalue
-			WriteAzSecret(newpath, secret, &credentials)
-
-		case "AWS":
-			newpath := SanitizePath(path)
-			UpdateAWSSecret(newpath, name, updatenewvalue)
-
-		case "GCP":
-			newpath := SanitizePath(path)
-
-			_, error := ReadGCPSecret(newpath, name)
-			if error != nil {
-				WriteGCPSecret(newpath, name, value)
-			} else {
-				fmt.Println("The specified secret already exist. Update it instead of Write.")
-			}
-
-		default:
 		}
 	}
 }
