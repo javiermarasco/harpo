@@ -4,7 +4,6 @@ The objective of this cli is to be able to manage secrets in Azure, AWS and GCP 
 specify where a secret is stored in a "folder structure" approach while providing an easy way to list 
 secrets in this folder structure and also an easy way to retrieve the values of those secrets.
 
-## [You can follow the progress of this project on my live streams on Twitch or Youtube](https://linktr.ee/javi__codes)
 
 # How to build it
 
