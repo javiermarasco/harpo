@@ -37,7 +37,7 @@ You need to define some environment variables in order to use `harpo`, those dep
 - "GCP_parent" (Contains the reference to the parent of the secrets in the format 'projects/parentid')
 
 For AWS the following permissions are needed:
-secretsmanager:Name
+  - secretsmanager:Name
   - secretsmanager:Description
   - secretsmanager:KmsKeyId
   - aws:RequestTag/${TagKey}
